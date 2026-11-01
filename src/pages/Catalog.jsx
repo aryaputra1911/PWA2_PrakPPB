@@ -15,6 +15,7 @@ import GUNS_LOCAL from '../data/guns'
 import GunCard from '../components/gun/GunCard'
 import AdvancedFilter from '../components/common/AdvancedFilter'
 import Pagination from '../components/common/Pagination'
+import LazyImage from '../components/common/LazyImage'
 import ConfirmModal from '../components/modals/ConfirmModal'
 import gunService from '../services/gunService'
 import {
@@ -164,7 +165,7 @@ export default function Catalog({ onNavigate }) {
             <ul className="draft-list">
               {archivedGuns.map((gun) => (
                 <li key={gun.id} className="draft-item">
-                  <img className="cart-img" src={gun.image_url} alt={gun.name} loading="lazy" />
+                  <LazyImage className="cart-img" src={gun.image_url} alt={gun.name} />
                   <div className="draft-info">
                     <span className="name display">{gun.name}</span>
                     <span className="type">

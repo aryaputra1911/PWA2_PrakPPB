@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import LazyImage from '../common/LazyImage'
 
 /**
  * Product image gallery — main image plus a clickable thumbnail strip.
@@ -13,7 +14,7 @@ export default function ImageGallery({ images, alt }) {
 
   return (
     <div className="gallery">
-      <img className="detail-img" src={current} alt={alt} loading="lazy" />
+      <img className="detail-img" src={current} alt={alt} />
       {images.length > 1 && (
         <div className="gallery-thumbs">
           {images.map((src, i) => (
@@ -24,7 +25,7 @@ export default function ImageGallery({ images, alt }) {
               onClick={() => setActive(i)}
               aria-label={`Show image ${i + 1}`}
             >
-              <img src={src} alt="" loading="lazy" />
+              <LazyImage src={src} alt="" />
             </button>
           ))}
         </div>

@@ -1,5 +1,6 @@
 import { ShoppingCart, Minus, Plus, Trash2, MessageCircle, ArrowRight } from 'lucide-react'
 import { useCart } from '../hooks/useCart'
+import LazyImage from '../components/common/LazyImage'
 import { WHATSAPP_NUMBER } from '../config/shop'
 import { formatPrice } from '../utils/helpers'
 
@@ -75,7 +76,7 @@ export default function CartPage({ onNavigateCatalog }) {
             <ul className="cart-list">
               {items.map((item) => (
                 <li key={item.id} className="cart-item">
-                  <img className="cart-img" src={item.image_url} alt={item.name} loading="lazy" />
+                  <LazyImage className="cart-img" src={item.image_url} alt={item.name} />
                   <div className="cart-info">
                     <span className="name display">{item.name}</span>
                     <span className="type">

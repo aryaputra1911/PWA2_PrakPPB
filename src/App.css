@@ -1773,3 +1773,26 @@
 .profile-section .page {
   padding: 0;
 }
+
+/* ---------------------------------------------------------------------------
+ * Lazy images — grey placeholder until the image scrolls into view
+ * --------------------------------------------------------------------------- */
+.lazy-img {
+  background: linear-gradient(90deg, #eef1f3 25%, #e2e7ea 50%, #eef1f3 75%);
+  background-size: 200% 100%;
+  animation: lazy-shimmer 1.2s linear infinite;
+  opacity: 0.6;
+  transition: opacity 0.4s ease;
+}
+
+.lazy-img--loaded {
+  animation: none;
+  background: #f7f9fa;
+  opacity: 1;
+}
+
+@keyframes lazy-shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
