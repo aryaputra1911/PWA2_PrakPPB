@@ -10,6 +10,7 @@ import {
   AlertCircle,
 } from 'lucide-react'
 import gunService from '../services/gunService'
+import ExtraImagesInput from '../components/gun/ExtraImagesInput'
 import uploadService from '../services/uploadService'
 import {
   saveDraft,
@@ -46,6 +47,7 @@ export default function EditGunPage({ gun, gunId, onBack, onSuccess }) {
   })
 
   const [currentImageUrl, setCurrentImageUrl] = useState('')
+  const [extraImages, setExtraImages] = useState([])
   const [imageFile, setImageFile] = useState(null)
   const [imagePreview, setImagePreview] = useState(null)
   const [uploading, setUploading] = useState(false)
@@ -89,6 +91,7 @@ export default function EditGunPage({ gun, gunId, onBack, onSuccess }) {
             is_featured: Boolean(data.is_featured),
           })
           setCurrentImageUrl(data.image_url || data.image || '/guns/pistol.svg')
+          setExtraImages((data.images || []).slice(1))
 
           if (data.ingredients && data.ingredients.length > 0) {
             setSpecs(data.ingredients.map((ing) => ({
@@ -131,6 +134,7 @@ export default function EditGunPage({ gun, gunId, onBack, onSuccess }) {
       if (draft.formData) setFormData(draft.formData)
       if (draft.specs) setSpecs(draft.specs)
       if (draft.steps) setSteps(draft.steps)
+      if (draft.extraImages) setExtraImages(draft.extraImages)
       if (draft.imagePreview) {
         setImagePreview(draft.imagePreview)
       }
@@ -152,6 +156,7 @@ export default function EditGunPage({ gun, gunId, onBack, onSuccess }) {
       specs,
       steps,
       imagePreview: imagePreview || currentImageUrl,
+      extraImages,
     }
     const saved = saveDraft(draftData, targetId)
     if (saved) {
@@ -278,6 +283,7 @@ export default function EditGunPage({ gun, gunId, onBack, onSuccess }) {
       servings: Number(formData.servings) || 1,
       difficulty: formData.difficulty || 'mudah',
       is_featured: Boolean(formData.is_featured),
+      images: extraImages,
       ingredients: cleanSpecs,
       steps: cleanSteps,
     }
@@ -387,6 +393,8 @@ export default function EditGunPage({ gun, gunId, onBack, onSuccess }) {
             </div>
           </div>
         </div>
+
+        <ExtraImagesInput images={extraImages} onChange={setExtraImages} />
 
         {/* Core fields */}
         <div className="form-grid">

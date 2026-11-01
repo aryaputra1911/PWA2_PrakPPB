@@ -1,4 +1,7 @@
+import { useState } from 'react'
+import { ShoppingCart, Check } from 'lucide-react'
 import FavoriteButton from '../common/FavoriteButton'
+import { addToCart } from '../../utils/cartStorage'
 import { formatPrice, truncate } from '../../utils/helpers'
 
 /**
@@ -8,9 +11,10 @@ import { formatPrice, truncate } from '../../utils/helpers'
  * @param {Object}   props.gun       — product data
  * @param {Function} props.onSelect  — called with the gun when clicked
  * @param {Function} [props.onEdit]  — called when Edit is clicked (admin)
- * @param {Function} [props.onDelete]— called when Delete is clicked (admin)
+ * @param {Function} [props.onDelete]— called when Archive is clicked (admin)
  */
 export default function GunCard({ gun, onSelect, onEdit, onDelete }) {
+  const [added, setAdded] = useState(false)
   const imgSrc = gun.image_url || gun.image || '/guns/pistol.svg'
   const category = gun.type || gun.category || '—'
   const caliber = gun.caliber || gun.difficulty || ''
@@ -51,6 +55,21 @@ export default function GunCard({ gun, onSelect, onEdit, onDelete }) {
       <div className="card-actions">
         <FavoriteButton gunId={gun.id || gun.name} />
 
+        <button
+          type="button"
+          className="card-act-btn"
+          onClick={(e) => {
+            e.stopPropagation()
+            addToCart(gun)
+            setAdded(true)
+            setTimeout(() => setAdded(false), 1500)
+          }}
+          aria-label={`Add ${gun.name} to cart`}
+          title="Add to cart"
+        >
+          {added ? <Check size={16} /> : <ShoppingCart size={16} />}
+        </button>
+
         {onEdit && (
           <button
             type="button"
@@ -68,8 +87,8 @@ export default function GunCard({ gun, onSelect, onEdit, onDelete }) {
             type="button"
             className="card-act-btn card-act-btn--danger"
             onClick={(e) => { e.stopPropagation(); onDelete(gun) }}
-            aria-label={`Delete ${gun.name}`}
-            title="Delete"
+            aria-label={`Archive ${gun.name}`}
+            title="Archive"
           >
             🗑️
           </button>

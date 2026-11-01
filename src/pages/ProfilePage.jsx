@@ -3,47 +3,50 @@ import {
   Shield,
   Copy,
   Check,
-  Save,
   Heart,
   FileText,
-  Camera,
   Play,
+  Pencil,
+  Trash2,
+  ArrowRight,
 } from 'lucide-react'
 import userService from '../services/userService'
 import { useFavorites } from '../hooks/useFavorites'
+import {
+  getAllDraftIds,
+  loadDraft,
+  deleteDraft,
+  getDraftTimestamp,
+  formatDraftTime,
+} from '../utils/draftStorage'
+import About from './About.jsx'
+import Contact from './Contact.jsx'
 
 /**
- * Get count of active drafts in localStorage
+ * Read every saved product draft with its display name and timestamp.
  */
-const getActiveDraftCount = () => {
-  try {
-    let count = 0
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i)
-      if (key && (key.startsWith('bore_barrel_draft_') || key.startsWith('recipe_draft_'))) {
-        count++
-      }
+const readDrafts = () =>
+  getAllDraftIds().map((id) => {
+    const draft = loadDraft(id) || {}
+    return {
+      id,
+      name: draft.formData?.name?.trim() || 'Untitled hardware',
+      type: draft.formData?.type || '',
+      isNew: id === 'create',
+      savedAt: getDraftTimestamp(id),
     }
-    return count
-  } catch {
-    return 0
-  }
-}
+  })
 
 /**
- * ProfilePage — User identity and Armory settings.
- * Manages operator profile, identifier, favorites stats, and draft storage.
+ * ProfilePage — operator identity, saved drafts, plus About and Contact.
+ * Profile editing lives on its own page (EditProfilePage).
  */
-export default function ProfilePage({ onReplaySplash }) {
-  const [profile, setProfile] = useState(() => userService.getUserProfile())
-  const [username, setUsername] = useState(profile.username || 'Shooter')
-  const [bio, setBio] = useState(profile.bio || '')
-  const [avatar, setAvatar] = useState(profile.avatar || null)
+export default function ProfilePage({ onReplaySplash, onEditProfile, onOpenDraft }) {
+  const [profile] = useState(() => userService.getUserProfile())
   const [copied, setCopied] = useState(false)
-  const [feedback, setFeedback] = useState('')
+  const [drafts, setDrafts] = useState(readDrafts)
 
   const { favorites } = useFavorites()
-  const [draftCount] = useState(getActiveDraftCount)
 
   const handleCopyId = () => {
     if (profile.userId) {
@@ -53,43 +56,9 @@ export default function ProfilePage({ onReplaySplash }) {
     }
   }
 
-  const handleAvatarChange = (e) => {
-    const file = e.target.files[0]
-    if (!file) return
-
-    if (file.size > 2 * 1024 * 1024) {
-      setFeedback('Avatar image must be under 2MB.')
-      setTimeout(() => setFeedback(''), 3000)
-      return
-    }
-
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      const base64 = event.target.result
-      setAvatar(base64)
-      userService.updateAvatar(base64)
-      setFeedback('Avatar updated.')
-      setTimeout(() => setFeedback(''), 3000)
-    }
-    reader.readAsDataURL(file)
-  }
-
-  const handleSaveProfile = (e) => {
-    e.preventDefault()
-    const updated = {
-      ...profile,
-      username: username.trim() || 'Shooter',
-      bio: bio.trim(),
-      avatar,
-    }
-    const result = userService.saveUserProfile(updated)
-    if (result.success) {
-      setProfile(result.data)
-      setFeedback('Profile successfully updated.')
-      setTimeout(() => setFeedback(''), 3000)
-    } else {
-      setFeedback('Failed to save profile.')
-    }
+  const handleDeleteDraft = (id) => {
+    deleteDraft(id)
+    setDrafts(readDrafts())
   }
 
   return (
@@ -98,7 +67,7 @@ export default function ProfilePage({ onReplaySplash }) {
         <div>
           <h1 className="display">Operator Profile</h1>
           <p className="lede">
-            Operator credentials, procurement statistics, and armorer details.
+            Operator credentials, saved drafts, and shop information.
           </p>
         </div>
         {onReplaySplash && (
@@ -113,37 +82,22 @@ export default function ProfilePage({ onReplaySplash }) {
         )}
       </section>
 
-      {feedback && (
-        <div className="toast toast--success">
-          <Check size={18} /> {feedback}
-        </div>
-      )}
-
       {/* Operator Card */}
       <div className="profile-card">
         <div className="profile-card-top">
           <div className="avatar-wrap">
-            {avatar ? (
-              <img src={avatar} alt={profile.username} className="avatar-img" />
+            {profile.avatar ? (
+              <img src={profile.avatar} alt={profile.username} className="avatar-img" />
             ) : (
               <div className="avatar-placeholder">
                 <Shield size={36} stroke="var(--brass)" />
               </div>
             )}
-            <label htmlFor="avatar-file-input" className="avatar-upload-btn" title="Upload avatar">
-              <Camera size={14} />
-              <input
-                id="avatar-file-input"
-                type="file"
-                accept="image/*"
-                onChange={handleAvatarChange}
-                className="hidden-file-input"
-              />
-            </label>
           </div>
 
           <div className="profile-identity">
             <h2 className="display">{profile.username || 'Shooter'}</h2>
+            {profile.bio && <p className="lede">{profile.bio}</p>}
             <div className="profile-id-row">
               <span className="mono-badge">{profile.userId}</span>
               <button
@@ -155,6 +109,16 @@ export default function ProfilePage({ onReplaySplash }) {
                 {copied ? <Check size={14} color="var(--brass)" /> : <Copy size={14} />}
               </button>
             </div>
+            {onEditProfile && (
+              <button
+                type="button"
+                className="btn btn--outline btn--sm"
+                onClick={onEditProfile}
+                style={{ marginTop: '10px' }}
+              >
+                <Pencil size={14} /> Edit Profile
+              </button>
+            )}
           </div>
         </div>
 
@@ -167,48 +131,64 @@ export default function ProfilePage({ onReplaySplash }) {
           </div>
           <div className="stat-item">
             <FileText size={20} className="stat-icon" stroke="var(--steel)" />
-            <div className="stat-val">{draftCount}</div>
+            <div className="stat-val">{drafts.length}</div>
             <div className="stat-label">Saved Offline Drafts</div>
           </div>
         </div>
       </div>
 
-      {/* Profile Form */}
-      <form onSubmit={handleSaveProfile} className="profile-form">
-        <h3 className="section-title">Armorer Details</h3>
+      {/* Drafts */}
+      <section className="profile-section">
+        <h3 className="section-title">Drafts</h3>
+        {drafts.length === 0 ? (
+          <p className="detail-empty">No drafts saved. Drafts are auto-saved while you fill the Add / Edit form.</p>
+        ) : (
+          <ul className="draft-list">
+            {drafts.map((d) => (
+              <li key={d.id} className="draft-item">
+                <div className="draft-info">
+                  <span className="name display">{d.name}</span>
+                  <span className="type">
+                    {d.isNew ? 'New hardware' : `Edit #${d.id}`}
+                    {d.type ? ` · ${d.type}` : ''}
+                    {d.savedAt ? ` · ${formatDraftTime(d.savedAt)}` : ''}
+                  </span>
+                </div>
+                <div className="draft-actions">
+                  {onOpenDraft && (
+                    <button
+                      type="button"
+                      className="btn btn--outline btn--sm"
+                      onClick={() => onOpenDraft(d.id)}
+                    >
+                      Continue <ArrowRight size={14} />
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="icon-btn"
+                    onClick={() => handleDeleteDraft(d.id)}
+                    aria-label={`Delete draft ${d.name}`}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
-        <div className="form-group">
-          <label htmlFor="prof-name" className="form-label">
-            Callsign / Operator Alias
-          </label>
-          <input
-            id="prof-name"
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder="e.g. Operator Delta, Master Gunsmith"
-            className="form-input"
-          />
-        </div>
+      {/* About & Contact (moved here from the top navigation) */}
+      <section className="profile-section">
+        <h3 className="section-title">About</h3>
+        <About />
+      </section>
 
-        <div className="form-group">
-          <label htmlFor="prof-bio" className="form-label">
-            Armory Notes / Station Bio
-          </label>
-          <textarea
-            id="prof-bio"
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
-            placeholder="Qualifications, preferred calibers, unit assignment..."
-            rows={3}
-            className="form-textarea"
-          />
-        </div>
-
-        <button type="submit" className="btn btn--primary">
-          <Save size={16} /> Save Armorer Profile
-        </button>
-      </form>
+      <section className="profile-section">
+        <h3 className="section-title">Contact</h3>
+        <Contact />
+      </section>
     </div>
   )
 }
